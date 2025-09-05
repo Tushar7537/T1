@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Image Tools</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        header h1 {
+            color: #2d3748;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #718096;
+            font-size: 1.1em;
+        }
+
+        .upload-area {
+            border: 3px dashed #cbd5e0;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 25px;
+            background: #f7fafc;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #ebf4ff;
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            color: #a0aec0;
+        }
+
+        .browse-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .browse-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .tool-card {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-3px);
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+        }
+
+        .tool-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .editor {
+            display: none;
+            margin-bottom: 25px;
+        }
+
+        .editor.active {
+            display: block;
+        }
+
+        .editor-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+
+        .controls {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group h3 {
+            margin-bottom: 12px;
+            color: #2d3748;
+            font-size: 1.1em;
+        }
+
+        .slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .preview-container {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .btn.primary {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn.primary:hover {
+            background: #38a169;
+        }
+
+        .btn.secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn.secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .format-options {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 15px 0;
+        }
+
+        .format-btn {
+            padding: 8px 16px;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .format-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .editor-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            .upload-area {
+                padding: 30px 20px;
+            }
+            
+            .tools-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🖼️ Simple Image Tools</h1>
+            <p>Essential image utilities that just work</p>
+        </header>
+
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-content">
+                <div class="upload-icon">📁</div>
+                <p>Drag & drop your image here</p>
+                <p style="color: #a0aec0; margin: 10px 0;">or</p>
+                <button class="browse-btn" onclick="document.getElementById('fileInput').click()">
+                    Choose Image
+                </button>
+                <input type="file" id="fileInput" accept="image/*" hidden>
+            </div>
+        </div>
+
+        <div class="tools-grid">
+            <div class="tool-card" onclick="showTool('resize')">
+                <div class="tool-icon">📏</div>
+                <h3>Resize</h3>
+                <p>Change image dimensions</p>
+            </div>
+            <div class="tool-card" onclick="showTool('compress')">
+                <div class="tool-icon">💾</div>
+                <h3>Compress</h3>
+                <p>Reduce file size</p>
+            </div>
+            <div class="tool-card" onclick="showTool('convert')">
+                <div class="tool-icon">🔄</div>
+                <h3>Convert</h3>
+                <p>Change format</p>
+            </div>
+            <div class="tool-card" onclick="showTool('rotate')">
+                <div class="tool-icon">↻</div>
+                <h3>Rotate</h3>
+                <p>Flip and rotate</p>
+            </div>
+        </div>
+
+        <!-- Resize Editor -->
+        <div class="editor" id="resizeEditor">
+            <div class="editor-content">
+                <div class="controls">
+                    <div class="control-group">
+                        <h3>Width</h3>
+                        <input type="range" class="slider" id="widthSlider" min="100" max="2000" value="800" oninput="updateResize()">
+                        <span id="widthValue">800 px</span>
+                    </div>
+                    <div class="control-group">
+                        <h3>Height</h3>
+                        <input type="range" class="slider" id="heightSlider" min="100" max="2000" value="600" oninput="updateResize()">
+                        <span id="heightValue">600 px</span>
+                    </div>
+                    <div class="control-group">
+                        <label>
+                            <input type="checkbox" id="maintainRatio" checked onchange="toggleRatio()">
+                            Maintain aspect ratio
+                        </label>
+                    </div>
+                </div>
+                <div class="preview-container">
+                    <img id="resizePreview" class="preview-image" alt="Resize preview">
+                </div>
+            </div>
+            <div class="action-buttons">
+                <button class="btn secondary" onclick="resetTool()">Reset</button>
+                <button class="btn primary" onclick="downloadResized()">Download</button>
+            </div>
+        </div>
+
+        <!-- Compress Editor -->
+        <div class="editor" id="compressEditor">
+            <div class="editor-content">
+                <div class="controls">
+                    <div class="control-group">
+                        <h3>Quality Level</h3>
+                        <input type="range" class="slider" id="qualitySlider" min="10" max="100" value="80" oninput="updateCompression()">
+                        <span id="qualityValue">80%</span>
+                    </div>
+                    <div class="control-group">
+                        <h3>File Size</h3>
+                        <span id="fileSize">0 KB</span>
+                    </div>
+                </div>
+                <div class="preview-container">
+                    <img id="compressPreview" class="preview-image" alt="Compress preview">
+                </div>
+            </div>
+            <div class="action-buttons">
+                <button class="btn secondary" onclick="resetTool()">Reset</button>
+                <button class="btn primary" onclick="downloadCompressed()">Download</button>
+            </div>
+        </div>
+
+        <!-- Convert Editor -->
+        <div class="editor" id="convertEditor">
+            <div class="editor-content">
+                <div class="controls">
+                    <div class="control-group">
+                        <h3>Convert To</h3>
+                        <div class="format-options">
+                            <button class="format-btn active" onclick="setFormat('jpeg')">JPEG</button>
+                            <button class="format-btn" onclick="setFormat('png')">PNG</button>
+                            <button class="format-btn" onclick="setFormat('webp')">WEBP</button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <h3>Quality</h3>
+                        <input type="range" class="slider" id="convertQuality" min="10" max="100" value="90" oninput="updateConvertQuality()">
+                        <span id="convertQualityValue">90%</span>
+                    </div>
+                </div>
+                <div class="preview-container">
+                    <img id="convertPreview" class="preview-image" alt="Convert preview">
+                </div>
+            </div>
+            <div class="action-buttons">
+                <button class="btn primary" onclick="downloadConverted()">Download</button>
+            </div>
+        </div>
+
+        <!-- Rotate Editor -->
+        <div class="editor" id="rotateEditor">
+            <div class="editor-content">
+                <div class="controls">
+                    <div class="control-group">
+                        <h3>Rotation</h3>
+                        <input type="range" class="slider" id="rotateSlider" min="0" max="360" value="0" oninput="updateRotation()">
+                        <span id="rotateValue">0°</span>
+                    </div>
+                    <div class="control-group">
+                        <h3>Flip</h3>
+                        <button class="btn secondary" onclick="flipHorizontal()">Flip Horizontal</button>
+                        <button class="btn secondary" onclick="flipVertical()">Flip Vertical</button>
+                    </div>
+                </div>
+                <div class="preview-container">
+                    <img id="rotatePreview" class="preview-image" alt="Rotate preview">
+                </div>
+            </div>
+            <div class="action-buttons">
+                <button class="btn secondary" onclick="resetRotation()">Reset</button>
+                <button class="btn primary" onclick="downloadRotated()">Download</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentImage = null;
+        let currentTool = null;
+        let currentFormat = 'jpeg';
+        let currentQuality = 90;
+        let originalImageData = null;
+
+        // Initialize
+        document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+        
+        // Drag and drop
+        const uploadArea = document.getElementById('uploadArea');
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect({ target: { files } });
+            }
+        });
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file || !file.type.startsWith('image/')) {
+                alert('Please select a valid image file');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentImage = new Image();
+                currentImage.onload = function() {
+                    originalImageData = e.target.result;
+                    // Show first tool by default
+                    showTool('resize');
+                };
+                currentImage.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function showTool(tool) {
+            if (!currentImage) {
+                alert('Please upload an image first');
+                return;
+            }
+
+            // Hide all editors
+            document.querySelectorAll('.editor').forEach(editor => {
+                editor.classList.remove('active');
+            });
+
+            // Show selected editor
+            document.getElementById(tool + 'Editor').classList.add('active');
+            currentTool = tool;
+
+            // Initialize the tool
+            switch(tool) {
+                case 'resize':
+                    initResize();
+                    break;
+                case 'compress':
+                    initCompress();
+                    break;
+                case 'convert':
+                    initConvert();
+                    break;
+                case 'rotate':
+                    initRotate();
+                    break;
+            }
+        }
+
+        // Resize functions
+        function initResize() {
+            document.getElementById('widthSlider').value = currentImage.width;
+            document.getElementById('heightSlider').value = currentImage.height;
+            document.getElementById('widthValue').textContent = currentImage.width + ' px';
+            document.getElementById('heightValue').textContent = currentImage.height + ' px';
+            updateResizePreview();
+        }
+
+        function updateResize() {
+            const width = parseInt(document.getElementById('widthSlider').value);
+            const height = parseInt(document.getElementById('heightSlider').value);
+            
+            document.getElementById('widthValue').textContent = width + ' px';
+            document.getElementById('heightValue').textContent = height + ' px';
+            
+            updateResizePreview();
+        }
+
+        function updateResizePreview() {
+            const width = parseInt(document.getElementById('widthSlider').value);
+            const height = parseInt(document.getElementById('heightSlider').value);
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = width;
+            canvas.height = height;
+            
+            ctx.drawImage(currentImage, 0, 0, width, height);
+            document.getElementById('resizePreview').src = canvas.toDataURL();
+        }
+
+        function downloadResized() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const width = parseInt(document.getElementById('widthSlider').value);
+            const height = parseInt(document.getElementById('heightSlider').value);
+            
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(currentImage, 0, 0, width, height);
+            
+            downloadImage(canvas, 'resized');
+        }
+
+        // Compress functions
+        function initCompress() {
+            updateCompression();
+        }
+
+        function updateCompression() {
+            const quality = parseInt(document.getElementById('qualitySlider').value);
+            document.getElementById('qualityValue').textContent = quality + '%';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(currentImage, 0, 0);
+            
+            const dataUrl = canvas.toDataURL('image/jpeg', quality / 100);
+            document.getElementById('compressPreview').src = dataUrl;
+            
+            // Calculate approximate file size
+            const base64 = dataUrl.split(',')[1];
+            const bytes = atob(base64).length;
+            document.getElementById('fileSize').textContent = Math.round(bytes / 1024) + ' KB';
+        }
+
+        function downloadCompressed() {
+            const quality = parseInt(document.getElementById('qualitySlider').value) / 100;
+            const canvas = document.createElement('canvas');
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(currentImage, 0, 0);
+            
+            downloadImage(canvas, 'compressed', 'jpeg', quality);
+        }
+
+        // Convert functions
+        function initConvert() {
+            document.getElementById('convertPreview').src = currentImage.src;
+        }
+
+        function setFormat(format) {
+            currentFormat = format;
+            document.querySelectorAll('.format-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function updateConvertQuality() {
+            const quality = parseInt(document.getElementById('convertQuality').value);
+            document.getElementById('convertQualityValue').textContent = quality + '%';
+            currentQuality = quality;
+        }
+
+        function downloadConverted() {
+            const canvas = document.createElement('canvas');
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(currentImage, 0, 0);
+            
+            downloadImage(canvas, 'converted', currentFormat, currentQuality / 100);
+        }
+
+        // Rotate functions
+        function initRotate() {
+            document.getElementById('rotatePreview').src = currentImage.src;
+            document.getElementById('rotateSlider').value = 0;
+            document.getElementById('rotateValue').textContent = '0°';
+        }
+
+        function updateRotation() {
+            const degrees = parseInt(document.getElementById('rotateSlider').value);
+            document.getElementById('rotateValue').textContent = degrees + '°';
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Calculate new canvas size to fit rotated image
+            const rad = degrees * Math.PI / 180;
+            const sin = Math.abs(Math.sin(rad));
+            const cos = Math.abs(Math.cos(rad));
+            const newWidth = currentImage.width * cos + currentImage.height * sin;
+            const newHeight = currentImage.width * sin + currentImage.height * cos;
+            
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+            
+            ctx.translate(newWidth / 2, newHeight / 2);
+            ctx.rotate(rad);
+            ctx.drawImage(currentImage, -currentImage.width / 2, -currentImage.height / 2);
+            
+            document.getElementById('rotatePreview').src = canvas.toDataURL();
+        }
+
+        function flipHorizontal() {
+            const canvas = document.createElement('canvas');
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.translate(currentImage.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(currentImage, 0, 0);
+            
+            document.getElementById('rotatePreview').src = canvas.toDataURL();
+            currentImage.src = canvas.toDataURL();
+        }
+
+        function flipVertical() {
+            const canvas = document.createElement('canvas');
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.translate(0, currentImage.height);
+            ctx.scale(1, -1);
+            ctx.drawImage(currentImage, 0, 0);
+            
+            document.getElementById('rotatePreview').src = canvas.toDataURL();
+            currentImage.src = canvas.toDataURL();
+        }
+
+        function resetRotation() {
+            document.getElementById('rotateSlider').value = 0;
+            document.getElementById('rotateValue').textContent = '0°';
+            document.getElementById('rotatePreview').src = originalImageData;
+            currentImage.src = originalImageData;
+        }
+
+        function downloadRotated() {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                downloadImage(canvas, 'rotated');
+            };
+            img.src = document.getElementById('rotatePreview').src;
+        }
+
+        // Utility functions
+        function downloadImage(canvas, prefix, format = 'png', quality = 1) {
+            const link = document.createElement('a');
+            link.download = `${prefix}-image.${format}`;
+            link.href = canvas.toDataURL(`image/${format}`, quality);
+            link.click();
+        }
+
+        function resetTool() {
+            showTool(currentTool);
+        }
+    </script>
+</body>
+</html>
