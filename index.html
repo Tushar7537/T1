@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profession Skill Gap Analyzer - Skill Gap Analyst</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #2563eb;
+            --primary-purple: #7C3AED;
+            --dark-blue: #1e40af;
+            --light-blue: #93c5fd;
+            --bg-gray: #f8fafc;
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+            --white: #ffffff;
+            --accent-green: #10B981;
+            --accent-red: #EF4444;
+            --accent-yellow: #F59E0B;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --rounded: 8px;
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--bg-gray);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Header */
+        header {
+            background-color: var(--white);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 15px 0;
+        }
+        
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary-purple);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .logo span {
+            color: var(--text-dark);
+        }
+        
+        .logo-icon {
+            background: var(--primary-purple);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 25px;
+        }
+        
+        nav ul li a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 500;
+            transition: var(--transition);
+        }
+        
+        nav ul li a:hover {
+            color: var(--primary-purple);
+        }
+        
+        .contact-email {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--text-light);
+            font-size: 14px;
+        }
+        
+        .contact-email i {
+            color: var(--primary-purple);
+        }
+        
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--primary-purple);
+            cursor: pointer;
+        }
+        
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--primary-purple), var(--primary-blue));
+            color: var(--white);
+            padding: 60px 0;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .hero h1 {
+            font-size: 2.2rem;
+            margin-bottom: 20px;
+        }
+        
+        .hero p {
+            max-width: 700px;
+            margin: 0 auto 30px;
+            opacity: 0.9;
+        }
+        
+        /* Main Content */
+        .main-content {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .selection-panel {
+            flex: 1;
+            background-color: var(--white);
+            border-radius: var(--rounded);
+            box-shadow: var(--shadow);
+            padding: 25px;
+        }
+        
+        .results-panel {
+            flex: 1;
+            background-color: var(--white);
+            border-radius: var(--rounded);
+            box-shadow: var(--shadow);
+            padding: 25px;
+        }
+        
+        .panel-title {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: var(--primary-purple);
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--bg-gray);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-group select, .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: var(--rounded);
+            font-size: 16px;
+            transition: var(--transition);
+        }
+        
+        .form-group select:focus, .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-purple);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+        }
+        
+        .skills-list {
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .skill-item {
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: var(--rounded);
+            margin-bottom: 10px;
+            background-color: var(--bg-gray);
+        }
+        
+        .skill-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .skill-name {
+            font-weight: 600;
+        }
+        
+        .skill-type {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            background-color: #e2e8f0;
+            padding: 3px 8px;
+            border-radius: 20px;
+        }
+        
+        .skill-benchmark {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        
+        .rating-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .rating-label {
+            font-size: 0.9rem;
+            min-width: 100px;
+        }
+        
+        .rating-stars {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .rating-star {
+            color: #e2e8f0;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .rating-star.active {
+            color: var(--accent-yellow);
+        }
+        
+        .rating-star:hover {
+            color: var(--accent-yellow);
+        }
+        
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-purple);
+            color: var(--white);
+            padding: 12px 25px;
+            border: none;
+            border-radius: var(--rounded);
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+            text-align: center;
+        }
+        
+        .btn:hover {
+            background-color: var(--dark-blue);
+        }
+        
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+        
+        /* Results */
+        .results-summary {
+            text-align: center;
+            padding: 20px;
+            background-color: var(--bg-gray);
+            border-radius: var(--rounded);
+            margin-bottom: 20px;
+        }
+        
+        .results-score {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-purple);
+            margin: 10px 0;
+        }
+        
+        .results-description {
+            color: var(--text-light);
+        }
+        
+        .gap-list {
+            margin-top: 20px;
+        }
+        
+        .gap-item {
+            padding: 15px;
+            border-left: 4px solid var(--accent-red);
+            background-color: #fef2f2;
+            border-radius: var(--rounded);
+            margin-bottom: 10px;
+        }
+        
+        .gap-item.moderate {
+            border-left-color: var(--accent-yellow);
+            background-color: #fffbeb;
+        }
+        
+        .gap-item.minor {
+            border-left-color: var(--accent-green);
+            background-color: #f0fdf4;
+        }
+        
+        .gap-skill {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .gap-details {
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+        
+        .resources-list {
+            margin-top: 30px;
+        }
+        
+        .resources-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--primary-purple);
+        }
+        
+        .resource-item {
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: var(--rounded);
+            margin-bottom: 10px;
+            background-color: var(--bg-gray);
+        }
+        
+        .resource-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .resource-details {
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-light);
+        }
+        
+        .loading i {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: var(--primary-purple);
+        }
+        
+        /* Footer */
+        footer {
+            background-color: var(--text-dark);
+            color: var(--white);
+            padding: 60px 0 30px;
+            margin-top: 60px;
+        }
+        
+        .footer-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .footer-logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: 15px;
+            display: block;
+        }
+        
+        .footer-logo span {
+            color: var(--primary-purple);
+        }
+        
+        .footer-about p {
+            opacity: 0.8;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+        
+        .footer-contact p {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            opacity: 0.8;
+        }
+        
+        .footer-links h3 {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            color: var(--primary-purple);
+        }
+        
+        .footer-links ul {
+            list-style: none;
+        }
+        
+        .footer-links ul li {
+            margin-bottom: 10px;
+        }
+        
+        .footer-links ul li a {
+            color: var(--white);
+            text-decoration: none;
+            opacity: 0.8;
+            transition: var(--transition);
+        }
+        
+        .footer-links ul li a:hover {
+            opacity: 1;
+            color: var(--primary-purple);
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            nav ul {
+                gap: 15px;
+            }
+            
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+            
+            .main-content {
+                flex-direction: column;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .header-container {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+            
+            nav {
+                display: none;
+            }
+            
+            .contact-email {
+                display: none;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            .skill-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            
+            .rating-container {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container header-container">
+            <a href="index.html" class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                Skill<span>Gap Analyst</span>
+            </a>
+            
+            <nav>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="index.html#tools">Tools</a></li>
+                    <li><a href="index.html#contact">Contact</a></li>
+                </ul>
+            </nav>
+            
+            <div class="contact-email">
+                <i class="fas fa-envelope"></i>
+                <span>bdmail500@gmail.com</span>
+            </div>
+            
+            <button class="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+    
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>Profession Skill Gap Analyzer</h1>
+            <p>Identify the gaps between your current skills and your target profession's requirements</p>
+        </div>
+    </section>
+    
+    <!-- Main Content -->
+    <div class="container">
+        <div class="main-content">
+            <div class="selection-panel">
+                <h2 class="panel-title">Select Your Target Profession</h2>
+                
+                <div class="form-group">
+                    <label for="profession-select">Career Path</label>
+                    <select id="profession-select">
+                        <option value="">Select a profession</option>
+                        <!-- Options will be populated from CSV -->
+                    </select>
+                </div>
+                
+                <div id="skills-container">
+                    <div class="loading" id="loading-skills">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Select a profession to view skills</p>
+                    </div>
+                    <!-- Skills will be populated here -->
+                </div>
+                
+                <button id="analyze-btn" class="btn btn-block">Analyze Skill Gaps</button>
+            </div>
+            
+            <div class="results-panel">
+                <h2 class="panel-title">Skill Gap Analysis</h2>
+                
+                <div id="results-container">
+                    <div class="loading">
+                        <i class="fas fa-chart-bar"></i>
+                        <p>Your skill gap analysis will appear here</p>
+                    </div>
+                    <!-- Results will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-container">
+                <div class="footer-about">
+                    <a href="index.html" class="footer-logo">Skill<span>Gap Analyst</span></a>
+                    <p>Identify, analyze, and bridge your skill gaps to unlock your full professional potential.</p>
+                </div>
+                
+                <div class="footer-contact">
+                    <h3>Contact Us</h3>
+                    <p><i class="fas fa-envelope"></i> bdmail500@gmail.com</p>
+                </div>
+                
+                <div class="footer-links">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="index.html#tools">All Tools</a></li>
+                        <li><a href="privacy-policy.html">Privacy Policy</a></li>
+                        <li><a href="terms-and-conditions.html">Terms of Use</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>© 2023 Skill Gap Analyst. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // CSV data URL
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMFtOE0x1mbuOkvX6VCNYBRaZ9vQg5inFFySh60s2Krzdxfvv8u987i5LEoEY5oZ5Wt--Dz3tyWAvx/pub?output=csv';
+        
+        // Global variables
+        let professions = [];
+        let skillsData = [];
+        let userRatings = {};
+        
+        // DOM Elements
+        const professionSelect = document.getElementById('profession-select');
+        const skillsContainer = document.getElementById('skills-container');
+        const resultsContainer = document.getElementById('results-container');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const loadingSkills = document.getElementById('loading-skills');
+        
+        // Initialize the application
+        function initApp() {
+            loadCSVData();
+            
+            // Event listeners
+            professionSelect.addEventListener('change', handleProfessionChange);
+            analyzeBtn.addEventListener('click', analyzeSkillGaps);
+        }
+        
+        // Load CSV data from Google Sheets
+        async function loadCSVData() {
+            try {
+                const response = await fetch(CSV_URL);
+                const csvData = await response.text();
+                parseCSVData(csvData);
+                populateProfessionSelect();
+            } catch (error) {
+                console.error('Error loading CSV data:', error);
+                skillsContainer.innerHTML = '<div class="loading"><p>Error loading data. Please try again later.</p></div>';
+            }
+        }
+        
+        // Parse CSV data
+        function parseCSVData(csvData) {
+            const lines = csvData.split('\n');
+            const headers = lines[0].split(',').map(header => header.trim());
+            
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                
+                const values = lines[i].split(',').map(value => value.trim());
+                if (values.length !== headers.length) continue;
+                
+                const skill = {};
+                for (let j = 0; j < headers.length; j++) {
+                    skill[headers[j]] = values[j];
+                }
+                
+                skillsData.push(skill);
+                
+                // Add to professions list if not already there
+                if (skill['Career Path'] && !professions.includes(skill['Career Path'])) {
+                    professions.push(skill['Career Path']);
+                }
+            }
+            
+            // Sort professions alphabetically
+            professions.sort();
+        }
+        
+        // Populate profession select dropdown
+        function populateProfessionSelect() {
+            professionSelect.innerHTML = '<option value="">Select a profession</option>';
+            professions.forEach(profession => {
+                const option = document.createElement('option');
+                option.value = profession;
+                option.textContent = profession;
+                professionSelect.appendChild(option);
+            });
+        }
+        
+        // Handle profession change
+        function handleProfessionChange() {
+            const selectedProfession = professionSelect.value;
+            
+            if (!selectedProfession) {
+                skillsContainer.innerHTML = '<div class="loading"><p>Select a profession to view skills</p></div>';
+                return;
+            }
+            
+            // Filter skills for selected profession
+            const professionSkills = skillsData.filter(skill => 
+                skill['Career Path'] === selectedProfession
+            );
+            
+            displaySkills(professionSkills);
+        }
+        
+        // Display skills for the selected profession
+        function displaySkills(skills) {
+            if (skills.length === 0) {
+                skillsContainer.innerHTML = '<div class="loading"><p>No skills found for this profession</p></div>';
+                return;
+            }
+            
+            let skillsHTML = '<div class="skills-list">';
+            
+            skills.forEach(skill => {
+                const skillId = `${skill['Career Path']}-${skill['Skill']}`.replace(/\s+/g, '-').toLowerCase();
+                
+                skillsHTML += `
+                    <div class="skill-item" data-skill-id="${skillId}">
+                        <div class="skill-header">
+                            <span class="skill-name">${skill['Skill']}</span>
+                            <span class="skill-type">${skill['Type']}</span>
+                        </div>
+                        <div class="skill-benchmark">
+                            Benchmark: ${'★'.repeat(skill['Benchmark (1-5)'])}${'☆'.repeat(5 - skill['Benchmark (1-5)'])} (${skill['Benchmark (1-5)']}/5)
+                        </div>
+                        <div class="rating-container">
+                            <span class="rating-label">Your skill level:</span>
+                            <div class="rating-stars" data-skill="${skill['Skill']}">
+                                <span class="rating-star" data-value="1">☆</span>
+                                <span class="rating-star" data-value="2">☆</span>
+                                <span class="rating-star" data-value="3">☆</span>
+                                <span class="rating-star" data-value="4">☆</span>
+                                <span class="rating-star" data-value="5">☆</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            skillsHTML += '</div>';
+            skillsContainer.innerHTML = skillsHTML;
+            
+            // Add event listeners to star ratings
+            document.querySelectorAll('.rating-stars').forEach(ratingEl => {
+                const skillName = ratingEl.getAttribute('data-skill');
+                ratingEl.querySelectorAll('.rating-star').forEach(star => {
+                    star.addEventListener('click', () => {
+                        const value = parseInt(star.getAttribute('data-value'));
+                        setRating(ratingEl, value);
+                        userRatings[skillName] = value;
+                    });
+                });
+            });
+        }
+        
+        // Set rating stars
+        function setRating(ratingEl, value) {
+            const stars = ratingEl.querySelectorAll('.rating-star');
+            stars.forEach((star, index) => {
+                if (index < value) {
+                    star.textContent = '★';
+                    star.classList.add('active');
+                } else {
+                    star.textContent = '☆';
+                    star.classList.remove('active');
+                }
+            });
+        }
+        
+        // Analyze skill gaps
+        function analyzeSkillGaps() {
+            const selectedProfession = professionSelect.value;
+            
+            if (!selectedProfession) {
+                alert('Please select a profession first');
+                return;
+            }
+            
+            if (Object.keys(userRatings).length === 0) {
+                alert('Please rate your skills first');
+                return;
+            }
+            
+            // Filter skills for selected profession
+            const professionSkills = skillsData.filter(skill => 
+                skill['Career Path'] === selectedProfession
+            );
+            
+            // Calculate gaps
+            let totalGap = 0;
+            let skillCount = 0;
+            const gapAnalysis = [];
+            
+            professionSkills.forEach(skill => {
+                const skillName = skill['Skill'];
+                const benchmark = parseInt(skill['Benchmark (1-5)']);
+                const userRating = userRatings[skillName] || 0;
+                const gap = Math.max(0, benchmark - userRating);
+                
+                totalGap += gap;
+                skillCount++;
+                
+                if (gap > 0) {
+                    gapAnalysis.push({
+                        skill: skillName,
+                        benchmark: benchmark,
+                        userRating: userRating,
+                        gap: gap,
+                        type: skill['Type'],
+                        category: skill['Category']
+                    });
+                }
+            });
+            
+            // Calculate overall score (0-100)
+            const maxPossibleGap = skillCount * 5;
+            const gapPercentage = (totalGap / maxPossibleGap) * 100;
+            const score = Math.round(100 - gapPercentage);
+            
+            // Sort gaps by severity (largest gaps first)
+            gapAnalysis.sort((a, b) => b.gap - a.gap);
+            
+            // Display results
+            displayResults(score, gapAnalysis, selectedProfession);
+        }
+        
+        // Display results
+        function displayResults(score, gapAnalysis, profession) {
+            let resultsHTML = `
+                <div class="results-summary">
+                    <h3>Your ${profession} Skill Gap Score</h3>
+                    <div class="results-score">${score}/100</div>
+                    <p class="results-description">
+                        ${getScoreDescription(score)}
+                    </p>
+                </div>
+            `;
+            
+            if (gapAnalysis.length > 0) {
+                resultsHTML += `
+                    <h3>Skill Gaps to Address</h3>
+                    <div class="gap-list">
+                `;
+                
+                gapAnalysis.forEach(gap => {
+                    let gapClass = 'minor';
+                    if (gap.gap >= 3) gapClass = '';
+                    else if (gap.gap >= 2) gapClass = 'moderate';
+                    
+                    resultsHTML += `
+                        <div class="gap-item ${gapClass}">
+                            <div class="gap-skill">${gap.skill}</div>
+                            <div class="gap-details">
+                                Your rating: ${gap.userRating}/5 | 
+                                Target: ${gap.benchmark}/5 | 
+                                Gap: ${gap.gap} levels
+                                <br>
+                                Type: ${gap.type} | Category: ${gap.category}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                resultsHTML += `
+                    </div>
+                    <div class="resources-list">
+                        <h3 class="resources-title">Recommended Learning Resources</h3>
+                        <p>Based on your skill gaps, we recommend focusing on these areas:</p>
+                `;
+                
+                // Group gaps by category for better recommendations
+                const categories = {};
+                gapAnalysis.forEach(gap => {
+                    if (!categories[gap.category]) {
+                        categories[gap.category] = [];
+                    }
+                    categories[gap.category].push(gap.skill);
+                });
+                
+                for (const category in categories) {
+                    resultsHTML += `
+                        <div class="resource-item">
+                            <div class="resource-name">${category} Skills</div>
+                            <div class="resource-details">
+                                Focus on: ${categories[category].join(', ')}
+                                <br>
+                                <a href="#">Find learning resources for ${category.toLowerCase()} skills</a>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                resultsHTML += `</div>`;
+            } else {
+                resultsHTML += `
+                    <div class="results-summary">
+                        <i class="fas fa-check-circle" style="font-size: 3rem; color: var(--accent-green);"></i>
+                        <h3>No Significant Skill Gaps Found!</h3>
+                        <p>Your skills match well with the requirements for ${profession}.</p>
+                    </div>
+                `;
+            }
+            
+            resultsContainer.innerHTML = resultsHTML;
+        }
+        
+        // Get description based on score
+        function getScoreDescription(score) {
+            if (score >= 90) return "Excellent! Your skills are well-aligned with this profession.";
+            if (score >= 70) return "Good! You have most of the required skills with some areas to improve.";
+            if (score >= 50) return "Moderate alignment. Focus on developing key skills for this profession.";
+            return "Significant skill gaps detected. Consider targeted learning to bridge these gaps.";
+        }
+        
+        // Initialize the application when the page loads
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
