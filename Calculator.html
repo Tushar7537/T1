@@ -294,6 +294,15 @@
             font-size: 14px;
         }
 
+        .angle-indicator {
+            margin-top: 10px;
+            padding: 5px 10px;
+            background: #e2e8f0;
+            border-radius: 5px;
+            font-size: 14px;
+            text-align: center;
+        }
+
         @media (max-width: 768px) {
             .calculator-content {
                 grid-template-columns: 1fr;
@@ -334,6 +343,10 @@
                     <div class="result" id="result">0</div>
                 </div>
                 
+                <div class="angle-indicator" id="angle-indicator">
+                    Angle Mode: DEG
+                </div>
+                
                 <div class="buttons" id="standard-buttons">
                     <button class="btn clear" onclick="clearAll()">C</button>
                     <button class="btn function" onclick="backspace()">⌫</button>
@@ -365,12 +378,12 @@
                     <button class="btn function" onclick="scientificFunction('cos')">cos</button>
                     <button class="btn function" onclick="scientificFunction('tan')">tan</button>
                     <button class="btn function" onclick="scientificFunction('sqrt')">√</button>
-                    <button class="btn function" onclick="scientificFunction('pow')">x^y</button>
+                    <button class="btn function" onclick="setPowerMode()">x^y</button>
                     
                     <button class="btn function" onclick="scientificFunction('log')">log</button>
                     <button class="btn function" onclick="scientificFunction('ln')">ln</button>
-                    <button class="btn function" onclick="scientificFunction('pi')">π</button>
-                    <button class="btn function" onclick="scientificFunction('e')">e</button>
+                    <button class="btn function" onclick="appendConstant('pi')">π</button>
+                    <button class="btn function" onclick="appendConstant('e')">e</button>
                     <button class="btn function" onclick="factorial()">n!</button>
                     
                     <button class="btn function" onclick="toggleDisplayMode('deg')">DEG</button>
@@ -429,20 +442,12 @@
                 
                 <div class="input-group">
                     <label for="from-unit">From</label>
-                    <select id="from-unit">
-                        <option value="meter">Meter</option>
-                        <option value="kilometer">Kilometer</option>
-                        <option value="centimeter">Centimeter</option>
-                    </select>
+                    <select id="from-unit"></select>
                 </div>
                 
                 <div class="input-group">
                     <label for="to-unit">To</label>
-                    <select id="to-unit">
-                        <option value="inch">Inch</option>
-                        <option value="foot">Foot</option>
-                        <option value="mile">Mile</option>
-                    </select>
+                    <select id="to-unit"></select>
                 </div>
                 
                 <div class="input-group">
@@ -465,11 +470,15 @@
         let memory = 0;
         let angleMode = 'deg'; // deg, rad, grad
         let currentBase = 'dec'; // dec, bin, oct, hex
+        let powerMode = false;
+        let firstOperand = null;
+        let currentOperation = null;
         
         // DOM elements
         const resultElement = document.getElementById('result');
         const calculationElement = document.getElementById('calculation');
         const historyContainer = document.getElementById('history-container');
+        const angleIndicator = document.getElementById('angle-indicator');
         
         // Initialize calculator
         function initCalculator() {
@@ -477,6 +486,7 @@
             setupTabNavigation();
             updateConverterOptions();
             convertUnits();
+            updateAngleIndicator();
         }
         
         // Set up tab navigation
@@ -515,6 +525,24 @@
         
         // Append value to display
         function appendToDisplay(value) {
+            if (powerMode) {
+                // Handle power operation
+                const base = parseFloat(currentInput);
+                const exponent = parseFloat(value);
+                const result = Math.pow(base, exponent);
+                
+                // Add to history
+                addToHistory(`${base}^${exponent} = ${result}`);
+                
+                // Update display
+                currentInput = result.toString();
+                calculation = `${base}^${exponent}`;
+                updateDisplay();
+                shouldResetScreen = true;
+                powerMode = false;
+                return;
+            }
+            
             if (shouldResetScreen) {
                 currentInput = '0';
                 shouldResetScreen = false;
@@ -523,10 +551,32 @@
             if (currentInput === '0' && value !== '.') {
                 currentInput = value;
             } else {
+                // Prevent multiple decimal points
+                if (value === '.' && currentInput.includes('.')) {
+                    return;
+                }
                 currentInput += value;
             }
             
+            // Update calculation if we're in the middle of an operation
+            if (currentOperation !== null) {
+                calculation = firstOperand + ' ' + getOperationSymbol(currentOperation) + ' ' + currentInput;
+            } else {
+                calculation = currentInput;
+            }
+            
             updateDisplay();
+        }
+        
+        // Get symbol for operation
+        function getOperationSymbol(operation) {
+            switch(operation) {
+                case '+': return '+';
+                case '-': return '-';
+                case '*': return '×';
+                case '/': return '÷';
+                default: return operation;
+            }
         }
         
         // Update display
@@ -538,17 +588,37 @@
         // Calculate result
         function calculate() {
             try {
-                // Replace visual operators with JavaScript operators
-                let expression = calculation.replace(/×/g, '*').replace(/÷/g, '/');
+                let result;
                 
-                // Evaluate the expression
-                let result = eval(expression);
+                if (currentOperation !== null && firstOperand !== null) {
+                    // Handle binary operations
+                    const secondOperand = parseFloat(currentInput);
+                    const first = parseFloat(firstOperand);
+                    
+                    switch(currentOperation) {
+                        case '+': result = first + secondOperand; break;
+                        case '-': result = first - secondOperand; break;
+                        case '*': result = first * secondOperand; break;
+                        case '/': result = first / secondOperand; break;
+                    }
+                    
+                    // Add to history
+                    addToHistory(`${firstOperand} ${getOperationSymbol(currentOperation)} ${currentInput} = ${result}`);
+                    
+                    // Reset operation state
+                    currentOperation = null;
+                    firstOperand = null;
+                } else {
+                    // Evaluate the expression directly
+                    let expression = calculation.replace(/×/g, '*').replace(/÷/g, '/');
+                    result = eval(expression);
+                    
+                    // Add to history
+                    addToHistory(`${calculation} = ${result}`);
+                }
                 
                 // Format the result
                 result = parseFloat(result.toFixed(10));
-                
-                // Add to history
-                addToHistory(`${calculation} = ${result}`);
                 
                 // Update calculation and result
                 calculation = result.toString();
@@ -569,6 +639,9 @@
         function clearAll() {
             currentInput = '0';
             calculation = '0';
+            currentOperation = null;
+            firstOperand = null;
+            powerMode = false;
             updateDisplay();
         }
         
@@ -589,7 +662,7 @@
             historyItem.textContent = entry;
             
             // Remove "No history yet" if it exists
-            if (historyContainer.firstChild.textContent === 'No history yet') {
+            if (historyContainer.firstChild && historyContainer.firstChild.textContent === 'No history yet') {
                 historyContainer.innerHTML = '';
             }
             
@@ -625,23 +698,11 @@
                 case 'sqrt':
                     result = Math.sqrt(inputValue);
                     break;
-                case 'pow':
-                    calculation = currentInput + '^';
-                    currentInput = '0';
-                    shouldResetScreen = true;
-                    updateDisplay();
-                    return;
                 case 'log':
                     result = Math.log10(inputValue);
                     break;
                 case 'ln':
                     result = Math.log(inputValue);
-                    break;
-                case 'pi':
-                    result = Math.PI;
-                    break;
-                case 'e':
-                    result = Math.E;
                     break;
             }
             
@@ -655,10 +716,42 @@
             shouldResetScreen = true;
         }
         
+        // Append constant to display
+        function appendConstant(constant) {
+            if (shouldResetScreen) {
+                currentInput = '0';
+                shouldResetScreen = false;
+            }
+            
+            let value;
+            switch(constant) {
+                case 'pi': value = Math.PI.toString(); break;
+                case 'e': value = Math.E.toString(); break;
+            }
+            
+            if (currentInput === '0') {
+                currentInput = value;
+            } else {
+                currentInput += value;
+            }
+            
+            calculation = currentInput;
+            updateDisplay();
+        }
+        
+        // Set power mode
+        function setPowerMode() {
+            firstOperand = currentInput;
+            powerMode = true;
+            calculation = currentInput + '^';
+            currentInput = '0';
+            updateDisplay();
+        }
+        
         // Factorial function
         function factorial() {
             let num = parseInt(currentInput);
-            if (num < 0) {
+            if (num < 0 || !Number.isInteger(num)) {
                 currentInput = 'Error';
                 updateDisplay();
                 return;
@@ -682,7 +775,12 @@
         // Toggle angle mode
         function toggleDisplayMode(mode) {
             angleMode = mode;
-            // Could update a display indicator in a more complex UI
+            updateAngleIndicator();
+        }
+        
+        // Update angle mode indicator
+        function updateAngleIndicator() {
+            angleIndicator.textContent = `Angle Mode: ${angleMode.toUpperCase()}`;
         }
         
         // Memory functions
@@ -709,7 +807,16 @@
         
         // Programmer functions
         function changeNumberBase(base) {
-            const inputValue = parseInt(currentInput);
+            let inputValue;
+            
+            // Convert from current base to decimal first
+            switch(currentBase) {
+                case 'bin': inputValue = parseInt(currentInput, 2); break;
+                case 'oct': inputValue = parseInt(currentInput, 8); break;
+                case 'hex': inputValue = parseInt(currentInput, 16); break;
+                default: inputValue = parseInt(currentInput); break;
+            }
+            
             let result;
             
             switch (base) {
@@ -728,7 +835,7 @@
             }
             
             // Add to history
-            addToHistory(`${inputValue} in ${base} = ${result}`);
+            addToHistory(`${currentInput} (${currentBase}) → ${result} (${base})`);
             
             // Update display
             currentInput = result;
@@ -740,7 +847,6 @@
         
         // Bitwise operations
         function bitwiseOperation(operation) {
-            // For simplicity, we'll just demonstrate with a fixed second operand
             const inputValue = parseInt(currentInput);
             let result;
             let secondOperand = 5; // Example value
@@ -839,6 +945,21 @@
             } else if (conversionType === 'temperature') {
                 fromUnit.value = 'celsius';
                 toUnit.value = 'fahrenheit';
+            } else if (conversionType === 'area') {
+                fromUnit.value = 'square meter';
+                toUnit.value = 'square foot';
+            } else if (conversionType === 'volume') {
+                fromUnit.value = 'liter';
+                toUnit.value = 'gallon';
+            } else if (conversionType === 'time') {
+                fromUnit.value = 'hour';
+                toUnit.value = 'minute';
+            } else if (conversionType === 'speed') {
+                fromUnit.value = 'km/h';
+                toUnit.value = 'mph';
+            } else if (conversionType === 'digital') {
+                fromUnit.value = 'megabyte';
+                toUnit.value = 'kilobyte';
             }
             
             // Update conversion
@@ -852,7 +973,7 @@
             const toUnit = document.getElementById('to-unit').value;
             const inputValue = parseFloat(document.getElementById('converter-input').value) || 0;
             
-            // Conversion factors (simplified for demo)
+            // Conversion factors
             let result;
             
             if (conversionType === 'length') {
@@ -893,9 +1014,130 @@
                     case 'fahrenheit': result = (inCelsius * 9/5) + 32; break;
                     case 'kelvin': result = inCelsius + 273.15; break;
                 }
-            } else {
-                // For other conversion types, just show a placeholder calculation
-                result = inputValue * 2.5;
+            } else if (conversionType === 'weight') {
+                // Convert to grams first, then to target unit
+                let inGrams;
+                switch (fromUnit) {
+                    case 'kilogram': inGrams = inputValue * 1000; break;
+                    case 'gram': inGrams = inputValue; break;
+                    case 'milligram': inGrams = inputValue / 1000; break;
+                    case 'pound': inGrams = inputValue * 453.592; break;
+                    case 'ounce': inGrams = inputValue * 28.3495; break;
+                    case 'ton': inGrams = inputValue * 1000000; break;
+                }
+                
+                switch (toUnit) {
+                    case 'kilogram': result = inGrams / 1000; break;
+                    case 'gram': result = inGrams; break;
+                    case 'milligram': result = inGrams * 1000; break;
+                    case 'pound': result = inGrams / 453.592; break;
+                    case 'ounce': result = inGrams / 28.3495; break;
+                    case 'ton': result = inGrams / 1000000; break;
+                }
+            } else if (conversionType === 'area') {
+                // Convert to square meters first, then to target unit
+                let inSquareMeters;
+                switch (fromUnit) {
+                    case 'square meter': inSquareMeters = inputValue; break;
+                    case 'square kilometer': inSquareMeters = inputValue * 1000000; break;
+                    case 'square mile': inSquareMeters = inputValue * 2589988.11; break;
+                    case 'square foot': inSquareMeters = inputValue * 0.092903; break;
+                    case 'square inch': inSquareMeters = inputValue * 0.00064516; break;
+                    case 'acre': inSquareMeters = inputValue * 4046.86; break;
+                    case 'hectare': inSquareMeters = inputValue * 10000; break;
+                }
+                
+                switch (toUnit) {
+                    case 'square meter': result = inSquareMeters; break;
+                    case 'square kilometer': result = inSquareMeters / 1000000; break;
+                    case 'square mile': result = inSquareMeters / 2589988.11; break;
+                    case 'square foot': result = inSquareMeters / 0.092903; break;
+                    case 'square inch': result = inSquareMeters / 0.00064516; break;
+                    case 'acre': result = inSquareMeters / 4046.86; break;
+                    case 'hectare': result = inSquareMeters / 10000; break;
+                }
+            } else if (conversionType === 'volume') {
+                // Convert to liters first, then to target unit
+                let inLiters;
+                switch (fromUnit) {
+                    case 'cubic meter': inLiters = inputValue * 1000; break;
+                    case 'liter': inLiters = inputValue; break;
+                    case 'milliliter': inLiters = inputValue / 1000; break;
+                    case 'gallon': inLiters = inputValue * 3.78541; break;
+                    case 'quart': inLiters = inputValue * 0.946353; break;
+                    case 'pint': inLiters = inputValue * 0.473176; break;
+                    case 'fluid ounce': inLiters = inputValue * 0.0295735; break;
+                }
+                
+                switch (toUnit) {
+                    case 'cubic meter': result = inLiters / 1000; break;
+                    case 'liter': result = inLiters; break;
+                    case 'milliliter': result = inLiters * 1000; break;
+                    case 'gallon': result = inLiters / 3.78541; break;
+                    case 'quart': result = inLiters / 0.946353; break;
+                    case 'pint': result = inLiters / 0.473176; break;
+                    case 'fluid ounce': result = inLiters / 0.0295735; break;
+                }
+            } else if (conversionType === 'time') {
+                // Convert to seconds first, then to target unit
+                let inSeconds;
+                switch (fromUnit) {
+                    case 'second': inSeconds = inputValue; break;
+                    case 'minute': inSeconds = inputValue * 60; break;
+                    case 'hour': inSeconds = inputValue * 3600; break;
+                    case 'day': inSeconds = inputValue * 86400; break;
+                    case 'week': inSeconds = inputValue * 604800; break;
+                    case 'month': inSeconds = inputValue * 2592000; break; // Approximate
+                    case 'year': inSeconds = inputValue * 31536000; break; // Approximate
+                }
+                
+                switch (toUnit) {
+                    case 'second': result = inSeconds; break;
+                    case 'minute': result = inSeconds / 60; break;
+                    case 'hour': result = inSeconds / 3600; break;
+                    case 'day': result = inSeconds / 86400; break;
+                    case 'week': result = inSeconds / 604800; break;
+                    case 'month': result = inSeconds / 2592000; break;
+                    case 'year': result = inSeconds / 31536000; break;
+                }
+            } else if (conversionType === 'speed') {
+                // Convert to m/s first, then to target unit
+                let inMetersPerSecond;
+                switch (fromUnit) {
+                    case 'm/s': inMetersPerSecond = inputValue; break;
+                    case 'km/h': inMetersPerSecond = inputValue / 3.6; break;
+                    case 'mph': inMetersPerSecond = inputValue / 2.23694; break;
+                    case 'knot': inMetersPerSecond = inputValue / 1.94384; break;
+                    case 'ft/s': inMetersPerSecond = inputValue / 3.28084; break;
+                }
+                
+                switch (toUnit) {
+                    case 'm/s': result = inMetersPerSecond; break;
+                    case 'km/h': result = inMetersPerSecond * 3.6; break;
+                    case 'mph': result = inMetersPerSecond * 2.23694; break;
+                    case 'knot': result = inMetersPerSecond * 1.94384; break;
+                    case 'ft/s': result = inMetersPerSecond * 3.28084; break;
+                }
+            } else if (conversionType === 'digital') {
+                // Convert to bytes first, then to target unit
+                let inBytes;
+                switch (fromUnit) {
+                    case 'bit': inBytes = inputValue / 8; break;
+                    case 'byte': inBytes = inputValue; break;
+                    case 'kilobyte': inBytes = inputValue * 1024; break;
+                    case 'megabyte': inBytes = inputValue * 1048576; break;
+                    case 'gigabyte': inBytes = inputValue * 1073741824; break;
+                    case 'terabyte': inBytes = inputValue * 1099511627776; break;
+                }
+                
+                switch (toUnit) {
+                    case 'bit': result = inBytes * 8; break;
+                    case 'byte': result = inBytes; break;
+                    case 'kilobyte': result = inBytes / 1024; break;
+                    case 'megabyte': result = inBytes / 1048576; break;
+                    case 'gigabyte': result = inBytes / 1073741824; break;
+                    case 'terabyte': result = inBytes / 1099511627776; break;
+                }
             }
             
             // Format the result
